@@ -25,7 +25,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Python script
-        run: python crawler/reviews.py
+        run: python crawlers/reviews.py
 
       - name: Commit and push changes
         if: steps.changed-files.outputs.files_changed == 'true'
