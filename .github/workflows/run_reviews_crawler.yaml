@@ -5,7 +5,7 @@ on:
     # at minte 0 past every 24th hout
     - cron: '0 */24 * * *'
       #at every 5th minutes
-    - cron: '*/5 * * * *'
+#    - cron: '*/5 * * * *'
       #*/5 * * * *
   workflow_dispatch:
 jobs:
@@ -38,4 +38,4 @@ jobs:
           git config user.email "jongsuklee45@gmail.com"
           git add .
           git commit -m "Update last_review_id.json"
-          git push https://${{ secrets.GH_TOKEN }}@github.com/yeonjin1357/action_test.git
+          git push https://${{ secrets.GH_TOKEN }}@github.com:goodnodes/syeong_slack_bot.git
