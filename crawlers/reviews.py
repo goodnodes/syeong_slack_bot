@@ -14,7 +14,6 @@ SLACK_ALARM_CHANNEL_ID = os.getenv('SLACK_ALARM_CHANNEL_ID')
 LAST_REVIEW_FILE_PATH = "crawlers/outputs/last_review_id.json"
 
 #########################################################################
-#{review['id']['label']} 11675990690
 
 client = WebClient(token=SLACK_OAUTH_TOKEN)
 
