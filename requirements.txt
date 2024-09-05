@@ -1,0 +1,16 @@
+beautifulsoup4==4.12.3
+boto3==1.35.10
+botocore==1.35.10
+bs4==0.0.2
+certifi==2024.8.30
+charset-normalizer==3.3.2
+idna==3.8
+jmespath==1.0.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
+requests==2.32.3
+s3transfer==0.10.2
+six==1.16.0
+slack_sdk==3.31.0
+soupsieve==2.6
+urllib3==1.26.20
