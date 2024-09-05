@@ -2,8 +2,7 @@ name: Run crawler for reviews
 
 on:
   schedule:
-    # every 12 minutes
-    - cron: '*/10 * * * *'
+    - cron: '*/17 * * * *'
   workflow_dispatch:
 jobs:
   run-code:
