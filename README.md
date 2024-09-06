@@ -6,10 +6,12 @@ This Python project is Slack bot for Syeong project
 ## Features
 
 - Fetches the latest reviews from the App Store.
-- Sends a Slack notification for new reviews.
+- Extracts and formats ranking information, including app category and rank.
+- Sends a Slack notification for new reviews and ranking updates.
 - Stores the last fetched review ID to avoid duplicate alerts.
+- Uses ChromeDriver to interact with the App Store page and extract data.
 - Supports GitHub Actions for automation.
-- Environment variables managed securely using `.env` files and `github secrets`.
+- Environment variables managed securely using `.env` files and GitHub secrets.
 
 ---
 
@@ -21,6 +23,7 @@ This Python project is Slack bot for Syeong project
 - `pip` package manager
 - Slack API token with chat permissions
 - App Store App ID for fetching reviews
+- Google Chrome and ChromeDriver installed for web scraping
 
 ### Installation
 
@@ -60,7 +63,8 @@ This Python project is Slack bot for Syeong project
 
 ### Running Locally
 
-To run the bot locally and check for new reviews, run:
+To run the bot locally and check for new reviews and ranking updates, run:
 
 ```bash
 python crawlers/reviews.py
+python crawlers/ranking.py
