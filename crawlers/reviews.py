@@ -87,17 +87,16 @@ def check_for_new_reviews():
     new_reviews = []
 
     for review in reviews:
-        print(f"{review['id']['label']}")
         if last_review_id and review['id']['label'] == last_review_id:
             break
         new_reviews.append(review)
     if new_reviews:
         new_reviews.reverse()
-        for review in new_reviews:
-            try:
-                response = client.chat_postMessage(channel=SLACK_USER_VOICE_CHANNEL_ID,text=format_review(review))
-            except SlackApiError as e:
-                print(f"Error posting slack message: {e}")
+        # for review in new_reviews:
+        #     try:
+        #         response = client.chat_postMessage(channel=SLACK_USER_VOICE_CHANNEL_ID,text=format_review(review))
+        #     except SlackApiError as e:
+        #         print(f"Error posting slack message: {e}")
         save_last_review_id(new_reviews[-1]['id']['label'])
 
 
