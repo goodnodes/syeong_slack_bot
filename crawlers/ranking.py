@@ -18,9 +18,11 @@ LAST_REVIEW_FILE_PATH = "crawlers/outputs/last_review_id.json"
 # This function gets data from chrom browser and parse App store ranking data
 def post_ranking_data():
     # 크롬 브라우저 옵션 설정 (헤드리스 모드로 실행)
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # GUI 없이 실행
+    chrome_options = webdriver.ChromeOptions()
+    # chrome_options.add_argument('--remote-debugging-port=9222')
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument("--disable-dev-shm-usage")
 
     # 크롬 드라이버 경로 설정 (GitHub Actions 또는 로컬환경에 맞춰 경로 설정)
