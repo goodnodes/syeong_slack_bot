@@ -46,7 +46,7 @@ def get_random_comment(comment_type, comments, rank_num):
     if comment_type != "unranked":
         comment_candidates = [str(rank_num) + "위 입니다."]
     if comment_type in comments:
-        comment_candidates.append(comments[comment_type])
+        comment_candidates.extend(comments[comment_type])
     return random.choice(comment_candidates)
 
 
