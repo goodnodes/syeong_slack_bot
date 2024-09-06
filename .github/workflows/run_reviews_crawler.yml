@@ -43,10 +43,10 @@ jobs:
           git config user.email "${{ secrets.JACOB_EMAIL }}"
           if [ -n "$(git status --porcelain)" ]; then
             echo "changes found"
-            echo "::set-output name=changes::true"
+            echo "changes=true" >> $GITHUB_OUTPUT
           else
             echo "no changes"
-            echo "::set-output name=changes::false"
+            echo "changes=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Commit and push changes
