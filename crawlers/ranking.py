@@ -10,8 +10,6 @@ from datetime import datetime
 ########################## Environments ###############################
 load_dotenv()
 APP_STORE_SYEONG_URL = os.environ['APP_STORE_SYEONG_URL']
-LAST_REVIEW_FILE_PATH = "crawlers/outputs/last_review_id.json"
-
 
 #########################################################################
 
@@ -66,7 +64,9 @@ def get_ranking_data():
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_driver_path = "/usr/local/bin/chromedriver"
+    print("Starting ChromeDriver...")
     service = Service(chrome_driver_path)
+    print("ChromeDriver started.")
     driver = webdriver.Chrome(service=service, options=chrome_options)
     try:
         driver.get(APP_STORE_SYEONG_URL)
@@ -83,14 +83,12 @@ def get_ranking_data():
         for element in elements:
             if pattern.search(element.text):
                 found = True
-                driver.quit()
                 return element.text.strip(), found
-
         if not found:
-            driver.quit()
             return "", found
     finally:
         driver.quit()
+        print("ChromeDriver closed.")
 
 
 def post_ranking_msg():
