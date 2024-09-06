@@ -6,12 +6,16 @@ import time
 from dotenv import load_dotenv
 import re
 from datetime import datetime
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 ########################## Environments ###############################
 load_dotenv()
 APP_STORE_SYEONG_URL = os.environ['APP_STORE_SYEONG_URL']
-
+SLACK_ALARMY_OAUTH_TOKEN = os.environ['SLACK_ALARMY_OAUTH_TOKEN']
+SLACK_NOTIFICATIONS_CHANNEL_ID = os.environ['SLACK_NOTIFICATIONS_CHANNEL_ID']
 #########################################################################
+client = WebClient(token=SLACK_ALARMY_OAUTH_TOKEN)
 
 
 def format_ranking(ranking, found):
@@ -45,15 +49,15 @@ def format_ranking(ranking, found):
     elif rank_number < 100:
         comment = "TOP💯 Congratulations!!! "
     elif rank_number < 150:
-        comment = "조금만 더 힘내면 TOP💯..! 화이팅 !!💪"
+        comment = "조금만 더 가면 TOP💯..! 화이팅 💪"
     else:
         comment = "🌊️🏊🏻‍️🏊‍🏊🏻🌊가즈아!!! 🌊️🏊🏻‍️🏊‍🏊🏻🌊️"
     return (
-        f"[📈오늘의 셩 앱스토어 순위]\n"
+        f"*[📈오늘의 셩 앱스토어 순위]*\n"
         f"{comment}\n"
-        f"카테고리 : {category}\n"
-        f"순위 : {rank}\n\n"
-        f"시간 : {now.strftime('%Y-%m-%d %H:%M')}"
+        f"*카테고리* : {category}\n"
+        f"*순위* : {rank}\n\n"
+        f"*시간* : {now.strftime('%Y-%m-%d %H:%M')}"
 
     )
 
@@ -95,7 +99,11 @@ def get_ranking_data():
 def post_ranking_msg():
     ranking_data, found = get_ranking_data()
     msg = format_ranking(ranking_data, found)
-    print(f"{msg}")
+    try:
+        response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
+                                           text=format_ranking(ranking_data, found))
+    except SlackApiError as e:
+        print(f"Error posting slack message: {e}")
 
 
 if __name__ == "__main__":

@@ -18,7 +18,6 @@ LAST_REVIEW_FILE_PATH = "crawlers/outputs/last_review_id.json"
 client = WebClient(token=SLACK_ALARMY_OAUTH_TOKEN)
 
 
-
 def fetch_reviews():
     response = requests.get(APP_STORE_REVIEW_URL)
     if response.status_code == 200:
@@ -48,14 +47,14 @@ def save_last_review_id(review_id):
 
 
 def format_review(review):
-    rating_map={
+    rating_map = {
         "1": "⭐",
         "2": "⭐️⭐️",
         "3": "⭐️⭐️⭐️",
         "4": "⭐️⭐️⭐️⭐️",
         "5": "⭐️⭐️⭐️⭐️⭐️"
     }
-    title_map={
+    title_map = {
         "1": "👿고객님이 화났어요!👿",
         "2": "🏊🏻앱스토어에 새로운 후기가 등록됐어요!",
         "3": "🏊🏻‍앱스토어에 새로운 후기가 등록됐어요!",
@@ -68,13 +67,14 @@ def format_review(review):
     formatted_date = parsed_date.strftime("%Y년 %m월 %d일 %I시 %M분 %S초")
 
     return (
-        f"{title_map.get(review['im:rating']['label'],'')}\n\n"
-        f"별점 : {rating_map.get(review['im:rating']['label'],'')}\n"
-        f"작성자 : {review['author']['name']['label']}\n"
-        f"제목 : {review['title']['label']}\n"
-        f"내용 : {review['content']['label']}\n"
-        f"날짜 : {formatted_date}\n"
-        f"버전 : {review['im:version']['label']}"
+        f"*[새로운 후기 등록]*\n"
+        f"*{title_map.get(review['im:rating']['label'], '')}*\n\n"
+        f"*별점* : {rating_map.get(review['im:rating']['label'], '')}\n"
+        f"*작성자* : {review['author']['name']['label']}\n"
+        f"*제목* : {review['title']['label']}\n"
+        f"*내용* : {review['content']['label']}\n"
+        f"*날짜* : {formatted_date}\n"
+        f"*버전* : {review['im:version']['label']}"
     )
 
 
@@ -94,7 +94,7 @@ def check_for_new_reviews():
         new_reviews.reverse()
         for review in new_reviews:
             try:
-                response = client.chat_postMessage(channel=SLACK_USER_VOICE_CHANNEL_ID,text=format_review(review))
+                response = client.chat_postMessage(channel=SLACK_USER_VOICE_CHANNEL_ID, text=format_review(review))
             except SlackApiError as e:
                 print(f"Error posting slack message: {e}")
         save_last_review_id(new_reviews[-1]['id']['label'])
