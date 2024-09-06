@@ -36,7 +36,7 @@ def format_ranking(ranking, found):
 
             rank_number_match = re.search(r'\d', rank)
             if rank_number_match:
-                rank_number = rank_number_match.group()
+                rank_number = int(rank_number_match.group())
     if rank_number < 10:
         comment = "🐐GOAT"
     elif rank_number < 50:
