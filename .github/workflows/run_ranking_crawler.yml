@@ -40,11 +40,23 @@ jobs:
         JACOB_EMAIL: ${{secrets.JACOB_EMAIL}}
       run: python crawlers/ranking.py
 
-    - name: Commit and push changes
-      if: steps.changed-files.outputs.files_changed == 'true'
+    - name: Check for changes
+      id: check_changes
       run: |
         git config user.name "${{ secrets.JACOB_GH_USER_NAME }}"
         git config user.email "${{ secrets.JACOB_EMAIL }}"
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changes found"
+          echo "changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "no changes"
+          echo "changes=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Commit and push changes
+      if: steps.check_changes.outputs.changes == 'true'
+      run: |
         git add .
-        git commit -m "Update data by workflows"
+        git commit -m "Update last_rank_num.json"
         git push https://${{ secrets.JACOB_GH_TOKEN }}@github.com/goodnodes/syeong_slack_bot.git
+        
