@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 
 ########################## Environments ###############################
 load_dotenv()
-APP_STORE_REVIEW_URL = os.getenv('APP_STORE_REVIEW_URL')
-SLACK_OAUTH_TOKEN = os.getenv('SLACK_ALARMY_OAUTH_TOKEN')
-SLACK_USER_VOICE_CHANNEL_ID = os.getenv('SLACK_USER_VOICE_CHANNEL_ID')
+APP_STORE_REVIEW_URL = os.environ['APP_STORE_REVIEW_URL']
+SLACK_OAUTH_TOKEN = os.environ['SLACK_ALARMY_OAUTH_TOKEN']
+SLACK_USER_VOICE_CHANNEL_ID = os.environ['SLACK_USER_VOICE_CHANNEL_ID']
 LAST_REVIEW_FILE_PATH = "crawlers/outputs/last_review_id.json"
 
 #########################################################################
@@ -102,4 +102,5 @@ def check_for_new_reviews():
 
 
 if __name__ == "__main__":
-    check_for_new_reviews()
+    print(os.environ['APP_STORE_REVIEW_URL'])
+    print(os.getenv('APP_STORE_REVIEW_URL'))
