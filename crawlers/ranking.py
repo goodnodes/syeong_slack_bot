@@ -1,11 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import os
 import time
 from dotenv import load_dotenv
 import re
+from datetime import datetime
 
 ########################## Environments ###############################
 load_dotenv()
@@ -16,50 +16,93 @@ LAST_REVIEW_FILE_PATH = "crawlers/outputs/last_review_id.json"
 #########################################################################
 
 # This function gets data from chrom browser and parse App store ranking data
-def post_ranking_data():
-    # 크롬 브라우저 옵션 설정 (헤드리스 모드로 실행)
+
+def get_chrome_driver():
     chrome_options = webdriver.ChromeOptions()
-    # chrome_options.add_argument('--remote-debugging-port=9222')
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument("--disable-dev-shm-usage")
-
-    # 크롬 드라이버 경로 설정 (GitHub Actions 또는 로컬환경에 맞춰 경로 설정)
     chrome_driver_path = "/usr/local/bin/chromedriver"
-
-    # 크롬 드라이버 서비스 설정
     service = Service(chrome_driver_path)
+    return webdriver.Chrome(service=service, options=chrome_options)
+def format_ranking(ranking, found):
+    now = datetime.now()
+    # Just set default value
+    # This Default value never be used as a result in expected scenarios.
+    category = "건강 및 피트니스"
+    rank = "1위"
+    rank_number = 1
+    comment = "Good"
+    if not found:
+        return (
+            f"[📈오늘의 셩 앱스토어 순위]\n\n"
+            f"😭안타깝지만 앱 스토어 차트에 셩이 없어요.\n\n"
+            f"시간 : {now.strftime('%Y-%m-%d %H:%M')}"
+        )
+    if "앱" in ranking:
+        parts = ranking.split("앱")
+        if len(parts) == 2:
+            category = parts[0].strip()
+            rank = parts[1].strip()
 
-    # Selenium 웹드라이버 설정
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+            rank_number_match = re.search(r'\d', rank)
+            if rank_number_match:
+                rank_number = rank_number_match.group()
+    if rank_number < 10:
+        comment = "🐐GOAT"
+    elif rank_number < 50:
+        comment = "절대 월드클래스 아닙니다."
+    elif rank_number < 100:
+        comment = "TOP💯 Congratulations!!! "
+    elif rank_number < 150:
+        comment = "조금만 더 힘내면 TOP💯..! 화이팅 !!💪"
+    else:
+        comment = "🌊️🏊🏻‍️🏊‍🏊🏻🌊가즈아!!! 🌊️🏊🏻‍️🏊‍🏊🏻🌊️"
+    return (
+            f"[📈오늘의 셩 앱스토어 순위]\n\n"
+            f"{comment}\n"
+            f"카테고리 : {category}\n"
+            f"순위 : {rank}\n\n"
+            f"시간 : {now.strftime('%Y-%m-%d %H:%M')}"
 
+        )
+
+def get_ranking_data():
+    driver = get_chrome_driver()
     # URL로 이동
     driver.get(APP_STORE_SYEONG_URL)
-
-    # 페이지가 로드될 시간을 기다림 (네트워크 상황에 따라 조정)
+    # Wait for loading web page.
+    # This timer value could be coordinated as per network environment
     time.sleep(5)
 
-    # 'a' 태그를 찾음
     elements = driver.find_elements(By.TAG_NAME, 'a')
 
-    # 정규표현식 패턴: "(아무 문자열) 앱 (아무 문자열) 위 (아무 문자열)"
+    #Ranking Pattern
     pattern = re.compile(r".*앱.*위.*")
 
     found = False
     for element in elements:
         # 각 'a' 태그에서 텍스트를 가져와 정규표현식 패턴과 매칭
         if pattern.search(element.text):
-            print(f"순위 정보: {element.text.strip()}")
+            format_ranking(element.text.strip())
             found = True
-            break
+            driver.quit()
+            return element.text.strip(), found
 
     if not found:
-        print("매칭되는 순위 정보가 없습니다.")
+        driver.quit()
+        return "", found
 
     # 브라우저 닫기
     driver.quit()
 
 
+def post_ranking_msg():
+    ranking_data, found = get_ranking_data()
+    msg = format_ranking(ranking_data, found)
+    print(f"{msg}")
+
+
 if __name__ == "__main__":
-    post_ranking_data()
+    post_ranking_msg()
