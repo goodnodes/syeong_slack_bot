@@ -26,6 +26,8 @@ def get_chrome_driver():
     chrome_driver_path = "/usr/local/bin/chromedriver"
     service = Service(chrome_driver_path)
     return webdriver.Chrome(service=service, options=chrome_options)
+
+
 def format_ranking(ranking, found):
     now = datetime.now()
     # Just set default value
@@ -60,17 +62,17 @@ def format_ranking(ranking, found):
     else:
         comment = "🌊️🏊🏻‍️🏊‍🏊🏻🌊가즈아!!! 🌊️🏊🏻‍️🏊‍🏊🏻🌊️"
     return (
-            f"[📈오늘의 셩 앱스토어 순위]\n\n"
-            f"{comment}\n"
-            f"카테고리 : {category}\n"
-            f"순위 : {rank}\n\n"
-            f"시간 : {now.strftime('%Y-%m-%d %H:%M')}"
+        f"[📈오늘의 셩 앱스토어 순위]\n\n"
+        f"{comment}\n"
+        f"카테고리 : {category}\n"
+        f"순위 : {rank}\n\n"
+        f"시간 : {now.strftime('%Y-%m-%d %H:%M')}"
 
-        )
+    )
+
 
 def get_ranking_data():
     driver = get_chrome_driver()
-    # URL로 이동
     driver.get(APP_STORE_SYEONG_URL)
     # Wait for loading web page.
     # This timer value could be coordinated as per network environment
@@ -78,14 +80,12 @@ def get_ranking_data():
 
     elements = driver.find_elements(By.TAG_NAME, 'a')
 
-    #Ranking Pattern
+    # Ranking Pattern
     pattern = re.compile(r".*앱.*위.*")
 
     found = False
     for element in elements:
-        # 각 'a' 태그에서 텍스트를 가져와 정규표현식 패턴과 매칭
         if pattern.search(element.text):
-            format_ranking(element.text.strip())
             found = True
             driver.quit()
             return element.text.strip(), found
@@ -94,7 +94,6 @@ def get_ranking_data():
         driver.quit()
         return "", found
 
-    # 브라우저 닫기
     driver.quit()
 
 
