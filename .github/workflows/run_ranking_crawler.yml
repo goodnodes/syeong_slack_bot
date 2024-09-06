@@ -2,7 +2,7 @@ name: Run Crawler for Ranking
 
 on:
   schedule:
-    - cron: '20 13 * * *'  # 12분마다 실행
+    - cron: '20 13 * * *'
   workflow_dispatch:
 
 jobs:
