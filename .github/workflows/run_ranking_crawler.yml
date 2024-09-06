@@ -18,17 +18,29 @@ jobs:
       with:
         python-version: 3.x
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements_ranking.txt
-
-    - name: Install Chrome dependencies
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y wget unzip
-        wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -q -O - https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
-        sudo unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
-        sudo apt-get install -y google-chrome-stable
+
+    - name: Install Google Chrome
+      run: |
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo apt install ./google-chrome-stable_current_amd64.deb
+
+    - name: Install ChromeDriver
+      run: |
+        LATEST_DRIVER=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)
+        wget https://chromedriver.storage.googleapis.com/$LATEST_DRIVER/chromedriver_linux64.zip
+        unzip chromedriver_linux64.zip
+        sudo mv chromedriver /usr/local/bin/chromedriver
+        sudo chmod +x /usr/local/bin/chromedriver
+
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_ranking.txt
 
     - name: Run Ranking Crawler
       env:
