@@ -102,5 +102,4 @@ def check_for_new_reviews():
 
 
 if __name__ == "__main__":
-    print(os.environ['APP_STORE_REVIEW_URL'])
-    print(os.getenv('APP_STORE_REVIEW_URL'))
+    check_for_new_reviews()
