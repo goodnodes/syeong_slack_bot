@@ -24,7 +24,7 @@ def format_ranking(ranking, found):
     comment = "Good"
     if not found:
         return (
-            f"[📈오늘의 셩 앱스토어 순위]\n\n"
+            f"[📈오늘의 셩 앱스토어 순위]\n"
             f"😭안타깝지만 앱 스토어 차트에 셩이 없어요.\n\n"
             f"시간 : {now.strftime('%Y-%m-%d %H:%M')}"
         )
@@ -37,6 +37,7 @@ def format_ranking(ranking, found):
             rank_number_match = re.search(r'\d', rank)
             if rank_number_match:
                 rank_number = int(rank_number_match.group())
+    print(rank_number)
     if rank_number < 10:
         comment = "🐐GOAT"
     elif rank_number < 50:
@@ -48,7 +49,7 @@ def format_ranking(ranking, found):
     else:
         comment = "🌊️🏊🏻‍️🏊‍🏊🏻🌊가즈아!!! 🌊️🏊🏻‍️🏊‍🏊🏻🌊️"
     return (
-        f"[📈오늘의 셩 앱스토어 순위]\n\n"
+        f"[📈오늘의 셩 앱스토어 순위]\n"
         f"{comment}\n"
         f"카테고리 : {category}\n"
         f"순위 : {rank}\n\n"
