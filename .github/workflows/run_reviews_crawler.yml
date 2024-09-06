@@ -1,4 +1,4 @@
-name: Run crawler for reviews
+name: Run Crawler for Reviews
 
 on:
   schedule:
@@ -22,17 +22,13 @@ jobs:
       - name: Install python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements_reviews.txt
 
       - name: Run Python script
         env :
           APP_STORE_REVIEW_URL : ${{secrets.APP_STORE_REVIEW_URL}}
-          SLACK_BOT_OAUTH_TOKEN : ${{secrets.SLACK_BOT_OAUTH_TOKEN}}
           SLACK_ALARMY_OAUTH_TOKEN : ${{secrets.SLACK_ALARMY_OAUTH_TOKEN}}
-          SLACK_ALARM_CHANNEL_ID : ${{secrets.SLACK_ALARM_CHANNEL_ID}}
           SLACK_USER_VOICE_CHANNEL_ID : ${{secrets.SLACK_USER_VOICE_CHANNEL_ID}}
-          JACOB_GH_USER_NAME : ${{secrets.JACOB_GH_USER_NAME}}
-          JACOB_EMAIL : ${{secrets.JACOB_EMAIL}}
         run: python crawlers/reviews.py
 
 
