@@ -25,12 +25,13 @@ def format_ranking(ranking, found):
     category = "건강 및 피트니스"
     rank = "1위"
     rank_number = 1
-    comment = "Good"
+
+    # comment for unranked case
+    comment = "😭안타깝지만 앱 스토어 차트에 셩이 없어요."
     if not found:
         return (
-            f"[📈오늘의 셩 앱스토어 순위]\n"
-            f"😭안타깝지만 앱 스토어 차트에 셩이 없어요.\n\n"
-            f"시간 : {now.strftime('%Y-%m-%d %H:%M')}"
+            f"*[📈오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
+            f"{comment}"
         )
     if "앱" in ranking:
         parts = ranking.split("앱")
@@ -53,12 +54,10 @@ def format_ranking(ranking, found):
     else:
         comment = "🌊️🏊🏻‍️🏊‍🏊🏻🌊가즈아!!! 🌊️🏊🏻‍️🏊‍🏊🏻🌊️"
     return (
-        f"*[📈오늘의 셩 앱스토어 순위 {now.strftime('%Y-%m-%d')}]*\n"
+        f"*[📈오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
         f"{comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}\n\n"
-        f"*시간* : {now.strftime('%Y-%m-%d %H:%M')}"
-
     )
 
 
