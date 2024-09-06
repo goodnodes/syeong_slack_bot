@@ -2,7 +2,7 @@ name: Run crawler for reviews
 
 on:
   schedule:
-    - cron: '45 * * * *'
+    - cron: '50 * * * *'
   workflow_dispatch:
 jobs:
   run-code:
@@ -30,8 +30,8 @@ jobs:
       - name: Commit and push changes
         if: steps.changed-files.outputs.files_changed == 'true'
         run: |
-          git config user.name "jongseokleedev"
-          git config user.email "jongsuklee45@gmail.com"
+          git config user.name "${{ secrets.JACOB_GH_USER_NAME }}"
+          git config user.email "${{ secrets.JACOB_EMAIL }}"
           git add .
           git commit -m "Update last_review_id.json"
           git push https://${{ secrets.JACOB_GH_TOKEN }}@github.com:goodnodes/syeong_slack_bot.git
