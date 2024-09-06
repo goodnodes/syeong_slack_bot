@@ -34,7 +34,7 @@ def format_ranking(ranking, found):
             category = parts[0].strip()
             rank = parts[1].strip()
 
-            rank_number_match = re.search(r'\d', rank)
+            rank_number_match = re.search(r'\d+', rank)
             if rank_number_match:
                 rank_number = int(rank_number_match.group())
     print(rank_number)
