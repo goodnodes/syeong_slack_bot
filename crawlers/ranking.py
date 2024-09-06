@@ -3,6 +3,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 import os
 import time
+import json
+import random
 from dotenv import load_dotenv
 import re
 from datetime import datetime
@@ -14,48 +16,131 @@ load_dotenv()
 APP_STORE_SYEONG_URL = os.environ['APP_STORE_SYEONG_URL']
 SLACK_ALARMY_OAUTH_TOKEN = os.environ['SLACK_ALARMY_OAUTH_TOKEN']
 SLACK_NOTIFICATIONS_CHANNEL_ID = os.environ['SLACK_NOTIFICATIONS_CHANNEL_ID']
+LAST_RANK_FILE_PATH = "crawlers/outputs/last_rank_num.json"
+COMMENTS_FILE_PATH = "crawlers/comments/comments.json"
+UP_AND_DOWN_COMMENTS_FILE_PATH = "crawlers/comments/up_and_down_comments.json"
 #########################################################################
 client = WebClient(token=SLACK_ALARMY_OAUTH_TOKEN)
 
+# [*TOP SECRET*] This magic number means unranked
+THE_MAGIC_NUMBER = 3201
+
+
+def load_comments(file_path):
+    try:
+        with open(file_path) as file:
+            return json.load(file)
+    except Exception as e:
+        print(f"Error loading comments: {e}")
+        return {}
+
+
+def get_random_comment(comment_type, comments, rank_num):
+    comment_candidates = [str(rank_num) + "위 입니다."]
+    if comment_type in comments:
+        comment_candidates.append(comments[comment_type])
+    return random.choice(comment_candidates)
+
+
+def get_last_rank_num():
+    if not os.path.exists(LAST_RANK_FILE_PATH):
+        return None
+    try:
+        with open(LAST_RANK_FILE_PATH, "r") as file:
+            data = json.load(file)
+            return data.get('last_rank_num')
+    except Exception as e:
+        print(f"Error fetching last rank num:{e}")
+        return None
+
+
+def save_last_rank_num(current_rank_num):
+    try:
+        with open(LAST_RANK_FILE_PATH, "w") as file:
+            json.dump({'last_rank_num': current_rank_num}, file)
+    except Exception as e:
+        print(f"Error saving last rank_num: {e}")
+
 
 def format_ranking(ranking, found):
+    comment_list = load_comments(COMMENTS_FILE_PATH)
+    up_and_down_comment_list = load_comments(UP_AND_DOWN_COMMENTS_FILE_PATH)
+    last_rank_num = get_last_rank_num()
     now = datetime.now()
     # Just set default value
     # This Default value never be used as a result in expected scenarios.
     category = "건강 및 피트니스"
-    rank = "1위"
-    rank_number = 1
+    rank = str(THE_MAGIC_NUMBER) + "위"
+    rank_num = THE_MAGIC_NUMBER  # 9999 rank number means unranked
 
     # comment for unranked case
-    comment = "😭안타깝지만 앱 스토어 차트에 셩이 없어요."
+    # up_and_down_prefix = "⛔"
+    comment = get_random_comment("unranked", comment_list)
+    # up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
+
+    if found:
+        if "앱" in ranking:
+            parts = ranking.split("앱")
+            if len(parts) == 2:
+                category = parts[0].strip()
+                rank = parts[1].strip()
+
+                rank_num_match = re.search(r'\d+', rank)
+                if rank_num_match:
+                    rank_num = int(rank_num_match.group())
+        else:
+            print("[MUST NOT ERROR]\nSomthing wrong")
+    # If last ranking was unranked
+    if last_rank_num == THE_MAGIC_NUMBER:
+        # And current rank is also unranked (in this condition, found should be false)
+        if rank_num == THE_MAGIC_NUMBER:
+            up_and_down_prefix = "⛔"
+            up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
+        # Chart IN
+        else:
+            up_and_down_prefix = "📈"
+            up_and_down_comment = get_random_comment("chart_in", up_and_down_comment_list)
+    else:
+        if rank_num > last_rank_num:
+            up_and_down_prefix = "📉"
+            if rank_num == THE_MAGIC_NUMBER:
+                # Chart OUT (in this condition, found should be false)
+                up_and_down_comment = get_random_comment("chart_out", up_and_down_comment_list)
+            else:
+                # down
+                up_and_down_comment = get_random_comment("down", up_and_down_comment_list)
+        # same
+        elif rank_num == last_rank_num:
+            up_and_down_prefix = "⛔"
+            up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
+        # up
+        else:
+            up_and_down_prefix = "📈"
+            up_and_down_comment = get_random_comment("up", up_and_down_comment_list)
+
+    if rank_num < 10:
+        comment = get_random_comment("top_10", comment_list, rank_num)
+    elif rank_num < 50:
+        comment = get_random_comment("top_50", comment_list, rank_num)
+    elif rank_num < 100:
+        comment = get_random_comment("top_100", comment_list, rank_num)
+    elif rank_num < 150:
+        comment = get_random_comment("top_150", comment_list, rank_num)
+    elif rank_num <= 200:
+        comment = get_random_comment("top_200", comment_list, rank_num)
+
+    save_last_rank_num(rank_num)
+
     if not found:
         return (
-            f"*[📈오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
-            f"{comment}"
+            f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
+            f"{up_and_down_comment} {comment}\n"
         )
-    if "앱" in ranking:
-        parts = ranking.split("앱")
-        if len(parts) == 2:
-            category = parts[0].strip()
-            rank = parts[1].strip()
-
-            rank_number_match = re.search(r'\d+', rank)
-            if rank_number_match:
-                rank_number = int(rank_number_match.group())
-    print(rank_number)
-    if rank_number < 10:
-        comment = "🐐GOAT"
-    elif rank_number < 50:
-        comment = "절대 월드클래스 아닙니다."
-    elif rank_number < 100:
-        comment = "TOP💯 Congratulations!!! "
-    elif rank_number < 150:
-        comment = "조금만 더 가면 TOP💯..! 화이팅 💪"
-    else:
-        comment = "🌊️🏊🏻‍️🏊‍🏊🏻🌊가즈아!!! 🌊️🏊🏻‍️🏊‍🏊🏻🌊️"
+    if up_and_down_prefix == "📉":
+        comment = "그래도... " + comment
     return (
-        f"*[📈오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
-        f"{comment}\n"
+        f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
+        f"{up_and_down_comment} {comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}\n\n"
     )
@@ -98,11 +183,12 @@ def get_ranking_data():
 def post_ranking_msg():
     ranking_data, found = get_ranking_data()
     msg = format_ranking(ranking_data, found)
-    try:
-        response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
-                                           text=format_ranking(ranking_data, found))
-    except SlackApiError as e:
-        print(f"Error posting slack message: {e}")
+    print(msg)
+    # try:
+    #     response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
+    #                                        text=format_ranking(ranking_data, found))
+    # except SlackApiError as e:
+    #     print(f"Error posting slack message: {e}")
 
 
 if __name__ == "__main__":
