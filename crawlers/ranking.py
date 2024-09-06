@@ -36,7 +36,9 @@ def load_comments(file_path):
 
 
 def get_random_comment(comment_type, comments, rank_num):
-    comment_candidates = [str(rank_num) + "위 입니다."]
+    comment_candidates = []
+    if comment_type != "unranked":
+        comment_candidates = [str(rank_num) + "위 입니다."]
     if comment_type in comments:
         comment_candidates.append(comments[comment_type])
     return random.choice(comment_candidates)
@@ -75,7 +77,7 @@ def format_ranking(ranking, found):
 
     # comment for unranked case
     # up_and_down_prefix = "⛔"
-    comment = get_random_comment("unranked", comment_list)
+    comment = get_random_comment("unranked", comment_list, rank_num)
     # up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
 
     if found:
