@@ -75,6 +75,7 @@ def format_ranking(ranking, found):
     up_and_down_comment_list = load_comments(UP_AND_DOWN_COMMENTS_FILE_PATH)
     last_rank_num = get_last_rank_num()
     now = datetime.now()
+    formatted_date = f'{now.month}월 {now.day}일'
     # Just set default value
     # This Default value never be used as a result in expected scenarios.
     category = "건강 및 피트니스"
@@ -82,9 +83,8 @@ def format_ranking(ranking, found):
     rank_num = THE_MAGIC_NUMBER  # 9999 rank number means unranked
 
     # comment for unranked case
-    # up_and_down_prefix = "⛔"
     comment = get_random_comment("unranked", comment_list, rank_num)
-    # up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
+    # default value
     rank_diff = ""
 
     if found:
@@ -145,13 +145,13 @@ def format_ranking(ranking, found):
 
     if not found:
         return (
-            f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
+            f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
             f"{up_and_down_comment} {comment}\n"
         )
     if up_and_down_prefix == "📉":
         comment = "그래도... " + comment
     return (
-        f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
+        f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
         f"{up_and_down_comment} {comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}{rank_diff}\n\n"
