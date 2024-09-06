@@ -146,13 +146,13 @@ def format_ranking(ranking, found):
     if not found:
         return (
             f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
-            f"{up_and_down_comment} {comment}\n"
+            f"{up_and_down_comment}{comment}\n"
         )
     if up_and_down_prefix == "📉":
         comment = "그래도... " + comment
     return (
         f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
-        f"{up_and_down_comment} {comment}\n"
+        f"{up_and_down_comment}{comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}{rank_diff}\n\n"
     )
