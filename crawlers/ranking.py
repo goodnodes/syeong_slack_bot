@@ -72,7 +72,7 @@ def get_ranking_data():
         driver.get(APP_STORE_SYEONG_URL)
         # Wait for loading web page.
         # This timer value could be coordinated as per network environment
-        time.sleep(5)
+        time.sleep(10)
 
         elements = driver.find_elements(By.TAG_NAME, 'a')
 
@@ -91,7 +91,6 @@ def get_ranking_data():
             return "", found
     finally:
         driver.quit()
-
 
 
 def post_ranking_msg():
