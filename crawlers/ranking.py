@@ -35,6 +35,12 @@ def load_comments(file_path):
         return {}
 
 
+def get_random_up_and_down_comment(comment_type, comments):
+    if comment_type in comments:
+        return random.choice(comments[comment_type])
+    return ""
+
+
 def get_random_comment(comment_type, comments, rank_num):
     comment_candidates = []
     if comment_type != "unranked":
@@ -79,6 +85,7 @@ def format_ranking(ranking, found):
     # up_and_down_prefix = "⛔"
     comment = get_random_comment("unranked", comment_list, rank_num)
     # up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
+    rank_diff = ""
 
     if found:
         if "앱" in ranking:
@@ -92,33 +99,36 @@ def format_ranking(ranking, found):
                     rank_num = int(rank_num_match.group())
         else:
             print("[MUST NOT ERROR]\nSomthing wrong")
+            return
     # If last ranking was unranked
     if last_rank_num == THE_MAGIC_NUMBER:
         # And current rank is also unranked (in this condition, found should be false)
         if rank_num == THE_MAGIC_NUMBER:
             up_and_down_prefix = "⛔"
-            up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
+            up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list)
         # Chart IN
         else:
             up_and_down_prefix = "📈"
-            up_and_down_comment = get_random_comment("chart_in", up_and_down_comment_list)
+            up_and_down_comment = get_random_up_and_down_comment("chart_in", up_and_down_comment_list)
     else:
         if rank_num > last_rank_num:
             up_and_down_prefix = "📉"
             if rank_num == THE_MAGIC_NUMBER:
                 # Chart OUT (in this condition, found should be false)
-                up_and_down_comment = get_random_comment("chart_out", up_and_down_comment_list)
+                up_and_down_comment = get_random_up_and_down_comment("chart_out", up_and_down_comment_list)
             else:
                 # down
-                up_and_down_comment = get_random_comment("down", up_and_down_comment_list)
+                up_and_down_comment = get_random_up_and_down_comment("down", up_and_down_comment_list)
+                rank_diff = " ("+str(rank_num - last_rank_num)+"위 하락)"
         # same
         elif rank_num == last_rank_num:
             up_and_down_prefix = "⛔"
-            up_and_down_comment = get_random_comment("same", up_and_down_comment_list)
+            up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list)
         # up
         else:
             up_and_down_prefix = "📈"
-            up_and_down_comment = get_random_comment("up", up_and_down_comment_list)
+            up_and_down_comment = get_random_up_and_down_comment("up", up_and_down_comment_list)
+            rank_diff = " (" + str(last_rank_num - rank_num) + "위 상승)"
 
     if rank_num < 10:
         comment = get_random_comment("top_10", comment_list, rank_num)
@@ -144,7 +154,7 @@ def format_ranking(ranking, found):
         f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {now.strftime('%Y-%m-%d')}\n"
         f"{up_and_down_comment} {comment}\n"
         f"*카테고리* : {category}\n"
-        f"*순위* : {rank}\n\n"
+        f"*순위* : {rank}{rank_diff}\n\n"
     )
 
 
