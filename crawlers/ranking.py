@@ -15,18 +15,6 @@ LAST_REVIEW_FILE_PATH = "crawlers/outputs/last_review_id.json"
 
 #########################################################################
 
-# This function gets data from chrom browser and parse App store ranking data
-
-def get_chrome_driver():
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_driver_path = "/usr/local/bin/chromedriver"
-    service = Service(chrome_driver_path)
-    return webdriver.Chrome(service=service, options=chrome_options)
-
 
 def format_ranking(ranking, found):
     now = datetime.now()
@@ -72,29 +60,38 @@ def format_ranking(ranking, found):
 
 
 def get_ranking_data():
-    driver = get_chrome_driver()
-    driver.get(APP_STORE_SYEONG_URL)
-    # Wait for loading web page.
-    # This timer value could be coordinated as per network environment
-    time.sleep(5)
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_driver_path = "/usr/local/bin/chromedriver"
+    service = Service(chrome_driver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    try:
+        driver.get(APP_STORE_SYEONG_URL)
+        # Wait for loading web page.
+        # This timer value could be coordinated as per network environment
+        time.sleep(5)
 
-    elements = driver.find_elements(By.TAG_NAME, 'a')
+        elements = driver.find_elements(By.TAG_NAME, 'a')
 
-    # Ranking Pattern
-    pattern = re.compile(r".*앱.*위.*")
+        # Ranking Pattern
+        pattern = re.compile(r".*앱.*위.*")
 
-    found = False
-    for element in elements:
-        if pattern.search(element.text):
-            found = True
+        found = False
+        for element in elements:
+            if pattern.search(element.text):
+                found = True
+                driver.quit()
+                return element.text.strip(), found
+
+        if not found:
             driver.quit()
-            return element.text.strip(), found
-
-    if not found:
+            return "", found
+    finally:
         driver.quit()
-        return "", found
 
-    driver.quit()
 
 
 def post_ranking_msg():
