@@ -208,12 +208,12 @@ def get_ranking_data():
 def post_ranking_msg():
     ranking_data, found = get_ranking_data()
     msg = format_ranking(ranking_data, found)
-    # print(msg)
-    try:
-        response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
-                                           text=msg)
-    except SlackApiError as e:
-        print(f"Error posting slack message: {e}")
+    print(msg)
+    # try:
+    #     response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
+    #                                        text=msg)
+    # except SlackApiError as e:
+    #     print(f"Error posting slack message: {e}")
 
 
 if __name__ == "__main__":
