@@ -49,7 +49,7 @@ def get_random_up_and_down_comment(comment_type, comments,last_up_and_down_comme
 
 
 def get_random_comment(comment_type, comments, rank_num, last_comment):
-    comment_candidates = []
+    comment_candidates = [""]
     if comment_type != "unranked":
         comment_candidates = [str(rank_num) + "위 입니다."]
     if comment_type in comments:
@@ -161,7 +161,7 @@ def format_ranking(ranking, found):
             f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
             f"{up_and_down_comment}{comment}\n"
         )
-    if up_and_down_prefix == "📉":
+    if up_and_down_prefix == "📉" and comment != "":
         comment = "그래도... " + comment
     return (
         f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
