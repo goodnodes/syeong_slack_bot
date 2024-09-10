@@ -155,17 +155,19 @@ def format_ranking(ranking, found):
         comment = get_random_comment("top_200", comment_list, rank_num, last_rank_num)
 
     save_last_rank(rank_num, up_and_down_comment, comment)
-
+    temp_comment = "🎶EXID가 부릅니다. 위 아래 위위 아래, 변동폭이 너무 지루하군요. 🥱마케팅팀은 휴가라도 갔나봐요?!"
     if not found:
         return (
             f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
-            f"{up_and_down_comment}{comment}\n"
+            f"{temp_comment}\n"
+            # f"{up_and_down_comment}{comment}\n"
         )
     if up_and_down_prefix == "📉" and comment != "":
         comment = "그래도... " + comment
     return (
         f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
-        f"{up_and_down_comment}{comment}\n"
+        # f"{up_and_down_comment}{comment}\n"
+        f"{temp_comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}{rank_diff}\n\n"
     )
