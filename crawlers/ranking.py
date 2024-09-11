@@ -16,6 +16,7 @@ load_dotenv()
 APP_STORE_SYEONG_URL = os.environ['APP_STORE_SYEONG_URL']
 SLACK_ALARMY_OAUTH_TOKEN = os.environ['SLACK_ALARMY_OAUTH_TOKEN']
 SLACK_NOTIFICATIONS_CHANNEL_ID = os.environ['SLACK_NOTIFICATIONS_CHANNEL_ID']
+SPECIAL_COMMENT = os.environ['SPECIAL_COMMENT']
 LAST_RANK_FILE_PATH = "crawlers/outputs/last_rank.json"
 COMMENTS_FILE_PATH = "crawlers/comments/comments.json"
 UP_AND_DOWN_COMMENTS_FILE_PATH = "crawlers/comments/up_and_down_comments.json"
@@ -35,8 +36,8 @@ def load_comments(file_path):
         return {}
 
 
-def get_random_up_and_down_comment(comment_type, comments,last_up_and_down_comment):
-    up_and_down_comment_candidates=[]
+def get_random_up_and_down_comment(comment_type, comments, last_up_and_down_comment):
+    up_and_down_comment_candidates = []
 
     if comment_type in comments:
         up_and_down_comment_candidates.extend(comments[comment_type])
@@ -75,10 +76,12 @@ def get_last_rank():
         return None, None, None
 
 
-def save_last_rank(current_rank_num,up_and_down_comment,comment):
+def save_last_rank(current_rank_num, up_and_down_comment, comment):
     try:
         with open(LAST_RANK_FILE_PATH, "w") as file:
-            json.dump({'last_rank_num': current_rank_num, 'up_and_down_comment': up_and_down_comment, 'comment':comment}, file)
+            json.dump(
+                {'last_rank_num': current_rank_num, 'up_and_down_comment': up_and_down_comment, 'comment': comment},
+                file)
     except Exception as e:
         print(f"Error saving last rank_num: {e}")
 
@@ -118,29 +121,35 @@ def format_ranking(ranking, found):
         # And current rank is also unranked (in this condition, found should be false)
         if rank_num == THE_MAGIC_NUMBER:
             up_and_down_prefix = "⛔"
-            up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list, last_up_and_down_comment)
+            up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list,
+                                                                 last_up_and_down_comment)
         # Chart IN
         else:
             up_and_down_prefix = "📈"
-            up_and_down_comment = get_random_up_and_down_comment("chart_in", up_and_down_comment_list, last_up_and_down_comment)
+            up_and_down_comment = get_random_up_and_down_comment("chart_in", up_and_down_comment_list,
+                                                                 last_up_and_down_comment)
     else:
         if rank_num > last_rank_num:
             up_and_down_prefix = "📉"
             if rank_num == THE_MAGIC_NUMBER:
                 # Chart OUT (in this condition, found should be false)
-                up_and_down_comment = get_random_up_and_down_comment("chart_out", up_and_down_comment_list, last_up_and_down_comment)
+                up_and_down_comment = get_random_up_and_down_comment("chart_out", up_and_down_comment_list,
+                                                                     last_up_and_down_comment)
             else:
                 # down
-                up_and_down_comment = get_random_up_and_down_comment("down", up_and_down_comment_list, last_up_and_down_comment)
-                rank_diff = " ("+str(rank_num - last_rank_num)+"위 하락)"
+                up_and_down_comment = get_random_up_and_down_comment("down", up_and_down_comment_list,
+                                                                     last_up_and_down_comment)
+                rank_diff = " (" + str(rank_num - last_rank_num) + "위 하락)"
         # same
         elif rank_num == last_rank_num:
             up_and_down_prefix = "⛔"
-            up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list, last_up_and_down_comment)
+            up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list,
+                                                                 last_up_and_down_comment)
         # up
         else:
             up_and_down_prefix = "📈"
-            up_and_down_comment = get_random_up_and_down_comment("up", up_and_down_comment_list, last_up_and_down_comment)
+            up_and_down_comment = get_random_up_and_down_comment("up", up_and_down_comment_list,
+                                                                 last_up_and_down_comment)
             rank_diff = " (" + str(last_rank_num - rank_num) + "위 상승)"
 
     if rank_num < 10:
@@ -155,19 +164,20 @@ def format_ranking(ranking, found):
         comment = get_random_comment("top_200", comment_list, rank_num, last_rank_num)
 
     save_last_rank(rank_num, up_and_down_comment, comment)
-    temp_comment = "🎶위! 아래! 위위, 아래! 변동폭이 너무 지루하군요.🥱 마케팅팀은 휴가라도 갔나봐요?!"
+    if SPECIAL_COMMENT != "":
+        merged_comment = SPECIAL_COMMENT
+    elif up_and_down_prefix == "📉" and comment != "" and found:
+        merged_comment = up_and_down_comment + "그래도... " + comment
+    else:
+        merged_comment = up_and_down_comment + comment
     if not found:
         return (
             f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
-            f"{temp_comment}\n"
-            # f"{up_and_down_comment}{comment}\n"
+            f"{merged_comment}\n"
         )
-    if up_and_down_prefix == "📉" and comment != "":
-        comment = "그래도... " + comment
     return (
         f"*[{up_and_down_prefix}오늘의 셩 앱스토어 순위]* {formatted_date}\n"
-        # f"{up_and_down_comment}{comment}\n"
-        f"{temp_comment}\n"
+        f"{merged_comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}{rank_diff}\n\n"
     )
@@ -208,9 +218,9 @@ def get_ranking_data():
 
 
 def post_ranking_msg():
-    # ranking_data, found = get_ranking_data()
-    # msg = format_ranking(ranking_data, found)
-    msg = f"*[셩 알리미의 속닥속닥🤫]*\n\n혹시 그거 아시나요? 오늘은 굿노즈 팀이 시작된지 800일이 지나는 날이에요.\n그 동안 다들 고생 많았습니다. 앞으로도 더 힘내봐요!💪"
+    ranking_data, found = get_ranking_data()
+    msg = format_ranking(ranking_data, found)
+    # msg = f"*[셩 알라미의 속닥속닥🤫]*\n\n혹시 그거 아시나요? 오늘은 굿노즈 팀이 시작된지 800일이 지나는 날이에요.\n그 동안 다들 고생 많았습니다. 앞으로도 더 힘내봐요!💪"
     # print(msg)
     try:
         response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,

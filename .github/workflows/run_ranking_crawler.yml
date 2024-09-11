@@ -38,6 +38,7 @@ jobs:
         SLACK_NOTIFICATIONS_CHANNEL_ID: ${{secrets.SLACK_NOTIFICATIONS_CHANNEL_ID}}
         JACOB_GH_USER_NAME: ${{secrets.JACOB_GH_USER_NAME}}
         JACOB_EMAIL: ${{secrets.JACOB_EMAIL}}
+        SPECIAL_COMMENT: ${{secrets.SPECIAL_COMMENT}}
       run: python crawlers/ranking.py
 
     - name: Check for changes
