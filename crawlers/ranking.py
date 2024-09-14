@@ -36,28 +36,35 @@ def load_comments(file_path):
         return {}
 
 
-def get_random_up_and_down_comment(comment_type, comments, last_up_and_down_comment):
+def get_random_up_and_down_comment(comment_type, comments, last_up_and_down_comment, history):
+    ud_comments_history = [entry.get('up_and_down_comment') for entry in history if 'up_and_down_comment' in history]
     up_and_down_comment_candidates = []
 
     if comment_type in comments:
         up_and_down_comment_candidates.extend(comments[comment_type])
-    filtered_candidates = [comment for comment in up_and_down_comment_candidates if comment != last_up_and_down_comment]
+    filtered_candidates = [comment for comment in up_and_down_comment_candidates if comment != last_up_and_down_comment and comment not in ud_comments_history]
 
+    # if there is no candidate after all comments are filtered, filter again with history comments
+    if not filtered_candidates:
+        filtered_candidates = [comment for comment in up_and_down_comment_candidates if comment != last_up_and_down_comment]
     # if candidates only has last comment
     if not filtered_candidates:
         filtered_candidates = up_and_down_comment_candidates
     return random.choice(filtered_candidates)
 
 
-def get_random_comment(comment_type, comments, rank_num, last_comment):
+def get_random_comment(comment_type, comments, rank_num, last_comment, history):
+    comments_history = [entry.get('comment') for entry in history if 'comment' in history]
     comment_candidates = [""]
     if comment_type != "unranked":
         comment_candidates = [str(rank_num) + "위 입니다."]
     if comment_type in comments:
         comment_candidates.extend(comments[comment_type])
     # remove last comment in candidates
-    filtered_candidates = [comment for comment in comment_candidates if comment != last_comment]
-
+    filtered_candidates = [comment for comment in comment_candidates if comment != last_comment and comment not in comments_history]
+    # if there is no candidate after all comments are filtered, filter again with history comments
+    if not filtered_candidates:
+        filtered_candidates = [comment for comment in comment_candidates if comment != last_comment]
     # if candidates only has last comment
     if not filtered_candidates:
         filtered_candidates = comment_candidates
@@ -66,22 +73,41 @@ def get_random_comment(comment_type, comments, rank_num, last_comment):
 
 def get_last_rank():
     if not os.path.exists(LAST_RANK_FILE_PATH):
-        return None, None, None
+        return None, None, None, []
     try:
         with open(LAST_RANK_FILE_PATH, "r") as file:
             data = json.load(file)
-            return data.get('last_rank_num'), data.get('up_and_down_comment'), data.get('comment')
+            history = data.get('history',[])
+            if history:
+                latest = history[-1]
+                return latest.get('last_rank_num'), latest.get('up_and_down_comment'), latest.get('comment'), history
+            else:
+                return None, None, None, history
     except Exception as e:
         print(f"Error fetching last rank num:{e}")
-        return None, None, None
+        return None, None, None, []
 
 
 def save_last_rank(current_rank_num, up_and_down_comment, comment):
     try:
+        if os.path.exists(LAST_RANK_FILE_PATH):
+            with open(LAST_RANK_FILE_PATH, "r") as file:
+                data = json.load(file)
+                history = data.get('history',[])
+        else:
+            history = []
+
+        new_entry = {
+            'last_rank_num': current_rank_num,
+            'up_and_down_comment': up_and_down_comment,
+            'comment': comment
+        }
+        history.append(new_entry)
+        if len(history) > 5:
+            history.pop(0)
+
         with open(LAST_RANK_FILE_PATH, "w") as file:
-            json.dump(
-                {'last_rank_num': current_rank_num, 'up_and_down_comment': up_and_down_comment, 'comment': comment},
-                file)
+            json.dump({'history':history},file)
     except Exception as e:
         print(f"Error saving last rank_num: {e}")
 
@@ -89,7 +115,7 @@ def save_last_rank(current_rank_num, up_and_down_comment, comment):
 def format_ranking(ranking, found):
     comment_list = load_comments(COMMENTS_FILE_PATH)
     up_and_down_comment_list = load_comments(UP_AND_DOWN_COMMENTS_FILE_PATH)
-    last_rank_num, last_up_and_down_comment, last_comment = get_last_rank()
+    last_rank_num, last_up_and_down_comment, last_comment, history = get_last_rank()
     now = datetime.now()
     formatted_date = f'{now.month}월 {now.day}일'
     # Just set default value
@@ -99,7 +125,7 @@ def format_ranking(ranking, found):
     rank_num = THE_MAGIC_NUMBER  # 9999 rank number means unranked
 
     # comment for unranked case
-    comment = get_random_comment("unranked", comment_list, rank_num, last_comment)
+    comment = get_random_comment("unranked", comment_list, rank_num, last_comment, history)
     # default value
     rank_diff = ""
 
@@ -122,49 +148,49 @@ def format_ranking(ranking, found):
         if rank_num == THE_MAGIC_NUMBER:
             up_and_down_prefix = "⛔"
             up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list,
-                                                                 last_up_and_down_comment)
+                                                                 last_up_and_down_comment, history)
         # Chart IN
         else:
             up_and_down_prefix = "📈"
             up_and_down_comment = get_random_up_and_down_comment("chart_in", up_and_down_comment_list,
-                                                                 last_up_and_down_comment)
+                                                                 last_up_and_down_comment, history)
     else:
         if rank_num > last_rank_num:
             up_and_down_prefix = "📉"
             if rank_num == THE_MAGIC_NUMBER:
                 # Chart OUT (in this condition, found should be false)
                 up_and_down_comment = get_random_up_and_down_comment("chart_out", up_and_down_comment_list,
-                                                                     last_up_and_down_comment)
+                                                                     last_up_and_down_comment, history)
             else:
                 # down
                 up_and_down_comment = get_random_up_and_down_comment("down", up_and_down_comment_list,
-                                                                     last_up_and_down_comment)
+                                                                     last_up_and_down_comment, history)
                 rank_diff = " (" + str(rank_num - last_rank_num) + "위 하락)"
         # same
         elif rank_num == last_rank_num:
             up_and_down_prefix = "⛔"
             up_and_down_comment = get_random_up_and_down_comment("same", up_and_down_comment_list,
-                                                                 last_up_and_down_comment)
+                                                                 last_up_and_down_comment, history)
         # up
         else:
             up_and_down_prefix = "📈"
             up_and_down_comment = get_random_up_and_down_comment("up", up_and_down_comment_list,
-                                                                 last_up_and_down_comment)
+                                                                 last_up_and_down_comment, history)
             rank_diff = " (" + str(last_rank_num - rank_num) + "위 상승)"
 
     if rank_num < 10:
-        comment = get_random_comment("top_10", comment_list, rank_num, last_rank_num)
+        comment = get_random_comment("top_10", comment_list, rank_num, last_rank_num, history)
     elif rank_num < 50:
-        comment = get_random_comment("top_50", comment_list, rank_num, last_rank_num)
+        comment = get_random_comment("top_50", comment_list, rank_num, last_rank_num, history)
     elif rank_num < 100:
-        comment = get_random_comment("top_100", comment_list, rank_num, last_rank_num)
+        comment = get_random_comment("top_100", comment_list, rank_num, last_rank_num, history)
     elif rank_num < 150:
-        comment = get_random_comment("top_150", comment_list, rank_num, last_rank_num)
+        comment = get_random_comment("top_150", comment_list, rank_num, last_rank_num, history)
     elif rank_num <= 200:
-        comment = get_random_comment("top_200", comment_list, rank_num, last_rank_num)
+        comment = get_random_comment("top_200", comment_list, rank_num, last_rank_num, history)
 
     save_last_rank(rank_num, up_and_down_comment, comment)
-    if SPECIAL_COMMENT != "":
+    if SPECIAL_COMMENT != "NONE":
         merged_comment = SPECIAL_COMMENT
     elif up_and_down_prefix == "📉" and comment != "" and found:
         merged_comment = up_and_down_comment + "그래도... " + comment

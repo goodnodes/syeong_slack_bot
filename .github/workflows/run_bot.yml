@@ -1,8 +1,6 @@
-name: Run Crawler for Ranking
+name: Run Syeong Bot
 
 on:
-  schedule:
-    - cron: '20 4 * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,23 +21,19 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y wget unzip
 
-    - name: Setup Chromedriver
-      uses: nanasess/setup-chromedriver@v2.2.2
-
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements_ranking.txt
+        pip install -r requirements.txt
 
-    - name: Run Ranking Crawler
+    - name: Run BOT
       env:
-        APP_STORE_SYEONG_URL: ${{secrets.APP_STORE_SYEONG_URL}}
         SLACK_ALARMY_OAUTH_TOKEN: ${{secrets.SLACK_ALARMY_OAUTH_TOKEN}}
         SLACK_NOTIFICATIONS_CHANNEL_ID: ${{secrets.SLACK_NOTIFICATIONS_CHANNEL_ID}}
         JACOB_GH_USER_NAME: ${{secrets.JACOB_GH_USER_NAME}}
         JACOB_EMAIL: ${{secrets.JACOB_EMAIL}}
-        SPECIAL_COMMENT: ${{vars.SPECIAL_COMMENT}}
-      run: python crawlers/ranking.py
+        SPECIAL_COMMENT: ${{vars.BOT_MSG}}
+      run: python bots/bot.py
 
     - name: Check for changes
       id: check_changes
@@ -58,6 +52,6 @@ jobs:
       if: steps.check_changes.outputs.changes == 'true'
       run: |
         git add .
-        git commit -m "Update last_rank_num.json"
+        git commit -m "Update syeong bot"
         git push https://${{ secrets.JACOB_GH_TOKEN }}@github.com/goodnodes/syeong_slack_bot.git
         
