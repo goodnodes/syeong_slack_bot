@@ -246,8 +246,6 @@ def get_ranking_data():
 def post_ranking_msg():
     ranking_data, found = get_ranking_data()
     msg = format_ranking(ranking_data, found)
-    # msg = f"*[셩 알라미의 속닥속닥🤫]*\n\n혹시 그거 아시나요? 오늘은 굿노즈 팀이 시작된지 800일이 지나는 날이에요.\n그 동안 다들 고생 많았습니다. 앞으로도 더 힘내봐요!💪"
-    # print(msg)
     try:
         response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
                                            text=msg)
