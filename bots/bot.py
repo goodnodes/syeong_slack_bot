@@ -8,9 +8,7 @@ from slack_sdk.errors import SlackApiError
 ########################## Environments ###############################
 load_dotenv()
 SLACK_ALARMY_OAUTH_TOKEN = os.environ['SLACK_ALARMY_OAUTH_TOKEN']
-SLACK_NOTIFICATIONS_CHANNEL_ID = os.environ['SLACK_NOTIFICATIONS_CHANNEL_ID']
 SLACK_RANDOM_CHANNEL_ID = os.environ['SLACK_RANDOM_CHANNEL_ID']
-SLACK_DEV_CHANNEL_ID = os.environ['SLACK_DEV_CHANNEL_ID']
 BOT_MSG = os.environ['BOT_MSG']
 #########################################################################
 client = WebClient(token=SLACK_ALARMY_OAUTH_TOKEN)
