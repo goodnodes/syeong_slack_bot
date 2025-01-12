@@ -2,7 +2,11 @@ name: Run Syeong Bot
 
 on:
   workflow_dispatch:
-
+    inputs:
+      BOT_MSG:
+        description: "Special comment to pass to the bot"
+        required: true
+        default: "Default message"
 jobs:
   run-crawler:
     runs-on: ubuntu-latest
@@ -30,9 +34,10 @@ jobs:
       env:
         SLACK_ALARMY_OAUTH_TOKEN: ${{secrets.SLACK_ALARMY_OAUTH_TOKEN}}
         SLACK_NOTIFICATIONS_CHANNEL_ID: ${{secrets.SLACK_NOTIFICATIONS_CHANNEL_ID}}
+        SLACK_RANDOM_CHANNEL_ID: ${{secrets.SLACK_RANDOM_CHANNEL_ID}}
         JACOB_GH_USER_NAME: ${{secrets.JACOB_GH_USER_NAME}}
         JACOB_EMAIL: ${{secrets.JACOB_EMAIL}}
-        SPECIAL_COMMENT: ${{vars.BOT_MSG}}
+        BOT_MSG: ${{github.event.inputs.BOT_MSG}}
       run: python bots/bot.py
 
     - name: Check for changes
