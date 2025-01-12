@@ -8,7 +8,7 @@ on:
         required: true
         default: "Default message"
 jobs:
-  run-crawler:
+  run-bot:
     runs-on: ubuntu-latest
 
     steps:
