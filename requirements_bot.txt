@@ -1,0 +1,12 @@
+DateTime==5.5
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
+pytz==2024.1
+pyzmq==26.2.0
+referencing==0.35.1
+requests==2.32.3
+slack_bolt==1.20.1
+slack_sdk==3.31.0
+python-dotenv==1.0.1
+Requests==2.32.3
+slack_sdk==3.31.0
