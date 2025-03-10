@@ -14,6 +14,7 @@ from slack_sdk.errors import SlackApiError
 ########################## Environments ###############################
 load_dotenv()
 APP_STORE_SYEONG_URL = os.environ['APP_STORE_SYEONG_URL']
+APP_STORE_SMILEPASS_URL = os.environ['APP_STORE_SMILEPASS_URL']
 SLACK_ALARMY_OAUTH_TOKEN = os.environ['SLACK_ALARMY_OAUTH_TOKEN']
 SLACK_NOTIFICATIONS_CHANNEL_ID = os.environ['SLACK_NOTIFICATIONS_CHANNEL_ID']
 SPECIAL_COMMENT = os.environ['SPECIAL_COMMENT']
@@ -112,7 +113,7 @@ def save_last_rank(current_rank_num, up_and_down_comment, comment):
         print(f"Error saving last rank_num: {e}")
 
 
-def format_ranking(ranking, found):
+def format_ranking(ranking, found,ranking_sp,found_sp):
     comment_list = load_comments(COMMENTS_FILE_PATH)
     up_and_down_comment_list = load_comments(UP_AND_DOWN_COMMENTS_FILE_PATH)
     last_rank_num, last_up_and_down_comment, last_comment, history = get_last_rank()
@@ -121,14 +122,31 @@ def format_ranking(ranking, found):
     # Just set default value
     # This Default value never be used as a result in expected scenarios.
     category = "건강 및 피트니스"
+    category_sp = "건강 및 피트니스"
     rank = str(THE_MAGIC_NUMBER) + "위"
+    rank_sp = str(THE_MAGIC_NUMBER) + "위"
     rank_num = THE_MAGIC_NUMBER  # 9999 rank number means unranked
+    rank_num_sp = THE_MAGIC_NUMBER  # 9999 rank number means unranked
 
     # comment for unranked case
     comment = get_random_comment("unranked", comment_list, rank_num, last_comment, history)
     # default value
     rank_diff = ""
+    rank_diff_sp = ""
 
+    if found_sp:
+        if "앱" in ranking_sp:
+            parts_sp = ranking_sp.split("앱")
+            if len(parts_sp) == 2:
+                category_sp = parts_sp[0].strip()
+                rank_sp = parts_sp[1].strip()
+
+                rank_num_match_sp = re.search(r'\d+', rank_sp)
+                if rank_num_match_sp:
+                    rank_num_sp = int(rank_num_match_sp.group())
+        else:
+            print("[MUST NOT ERROR]\nSomthing wrong")
+            return
     if found:
         if "앱" in ranking:
             parts = ranking.split("앱")
@@ -206,10 +224,11 @@ def format_ranking(ranking, found):
         f"{merged_comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}{rank_diff}\n\n"
+        f"*스마일패스 순위* : {rank_sp}\n\n"
     )
 
 
-def get_ranking_data():
+def get_ranking_data(url):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
@@ -221,7 +240,7 @@ def get_ranking_data():
     print("ChromeDriver started.")
     driver = webdriver.Chrome(service=service, options=chrome_options)
     try:
-        driver.get(APP_STORE_SYEONG_URL)
+        driver.get(url)
         # Wait for loading web page.
         # This timer value could be coordinated as per network environment
         time.sleep(10)
@@ -244,8 +263,10 @@ def get_ranking_data():
 
 
 def post_ranking_msg():
-    ranking_data, found = get_ranking_data()
-    msg = format_ranking(ranking_data, found)
+    ranking_data, found = get_ranking_data(APP_STORE_SYEONG_URL)
+    ranking_data_sp, found_sp = get_ranking_data(APP_STORE_SMILEPASS_URL)
+
+    msg = format_ranking(ranking_data, found,ranking_data_sp,found_sp )
     try:
         response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
                                            text=msg)

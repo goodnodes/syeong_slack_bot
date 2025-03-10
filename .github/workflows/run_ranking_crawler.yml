@@ -34,6 +34,7 @@ jobs:
     - name: Run Ranking Crawler
       env:
         APP_STORE_SYEONG_URL: ${{secrets.APP_STORE_SYEONG_URL}}
+        APP_STORE_SMILEPASS_URL : ${{secrets.APP_STORE_SMILEPASS_URL}}
         SLACK_ALARMY_OAUTH_TOKEN: ${{secrets.SLACK_ALARMY_OAUTH_TOKEN}}
         SLACK_NOTIFICATIONS_CHANNEL_ID: ${{secrets.SLACK_NOTIFICATIONS_CHANNEL_ID}}
         JACOB_GH_USER_NAME: ${{secrets.JACOB_GH_USER_NAME}}
