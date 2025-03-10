@@ -224,7 +224,6 @@ def format_ranking(ranking, found,ranking_sp,found_sp):
         f"{merged_comment}\n"
         f"*카테고리* : {category}\n"
         f"*순위* : {rank}{rank_diff}\n\n"
-        f"*스마일패스 순위* : {rank_sp}\n\n"
     )
 
 
