@@ -64,6 +64,7 @@ This Python project is Slack bot for Syeong project
 ### Running Locally
 
 To run the bot locally and check for new reviews and ranking updates, run:
+# chrome_driver_path = "/opt/homebrew/bin/chromedriver"
 
 ```bash
 python crawlers/reviews.py

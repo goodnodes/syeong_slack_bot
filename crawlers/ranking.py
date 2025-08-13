@@ -1,3 +1,4 @@
+from typing import Optional
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -10,6 +11,8 @@ import re
 from datetime import datetime
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+import requests
+from requests.exceptions import RequestException
 
 ########################## Environments ###############################
 load_dotenv()
@@ -21,6 +24,109 @@ SPECIAL_COMMENT = os.environ['SPECIAL_COMMENT']
 LAST_RANK_FILE_PATH = "crawlers/outputs/last_rank.json"
 COMMENTS_FILE_PATH = "crawlers/comments/comments.json"
 UP_AND_DOWN_COMMENTS_FILE_PATH = "crawlers/comments/up_and_down_comments.json"
+APP_BUNDLE_ID_SYEONG = os.getenv('APP_BUNDLE_ID_SYEONG', '').strip()
+ITUNES_SEARCH_COUNTRY = os.getenv('ITUNES_SEARCH_COUNTRY', 'us').strip()
+ITUNES_SEARCH_TERM = os.getenv('ITUNES_SEARCH_TERM', 'swimming').strip()
+LAST_KEYWORD_RANK_FILE_PATH = "crawlers/outputs/last_keyword_rank.json"
+LAST_GLOBAL_KEYWORD_RANK_FILE_PATH = "crawlers/outputs/last_keyword_rank.json"
+ITUNES_SEARCH_LIMIT = 200  # API max
+def _lookup_track_id_by_bundle(bundle_id: str, country: str) -> int:
+    if not bundle_id:
+        return 0
+    url = "https://itunes.apple.com/lookup"
+    params = {"bundleId": bundle_id, "country": country}
+    try:
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        results = data.get("results", [])
+        if not results:
+            return 0
+        return int(results[0].get("trackId", 0))
+    except (RequestException, ValueError) as e:
+        print(f"[iTunes Lookup] error: {e}")
+        return 0
+
+
+def _search_keyword_positions(term: str, country: str, limit: int = 200) -> list[dict]:
+    url = "https://itunes.apple.com/search"
+    params = {
+        "term": term,
+        "country": country,
+        "media": "software",
+        "entity": "software",
+        "limit": limit
+    }
+    try:
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("results", [])
+    except (RequestException, ValueError) as e:
+        print(f"[iTunes Search] error: {e}")
+        return []
+
+
+def get_keyword_rank(term: str, country: str, track_id: int) -> int:
+    results = _search_keyword_positions(term, country, ITUNES_SEARCH_LIMIT)
+    if not results:
+        return THE_MAGIC_NUMBER
+    for idx, item in enumerate(results, start=1):
+        if int(item.get("trackId", 0)) == track_id:
+            return idx
+    return THE_MAGIC_NUMBER
+
+
+def get_last_keyword_rank():
+    if not os.path.exists(LAST_KEYWORD_RANK_FILE_PATH):
+        return None
+    try:
+        with open(LAST_KEYWORD_RANK_FILE_PATH, "r") as f:
+            data = json.load(f)
+            return data.get("last_rank")
+    except Exception as e:
+        print(f"Error reading last keyword rank: {e}")
+        return None
+
+
+def save_last_keyword_rank(current_rank: int):
+    try:
+        with open(LAST_KEYWORD_RANK_FILE_PATH, "w") as f:
+            json.dump({"last_rank": current_rank}, f)
+    except Exception as e:
+        print(f"Error saving last keyword rank: {e}")
+
+def format_keyword_message(term: str, country: str, rank_now: int, rank_prev: Optional[int]) -> str:
+    """
+    Formats keyword ranking messages in English for US/UK audiences,
+    with a title line highlighting the global Syeong app's position.
+    """
+    country_label = country.upper()
+
+    # Title line
+    title_line = f"*🌎 Current US AppStore ranking of Syeong app for '{term}' keyword*"
+
+    if rank_now == THE_MAGIC_NUMBER:
+        body_line = f"*Keyword* '{term}' / {country_label} : Not ranked"
+    else:
+        delta = ""
+        prefix = "⛔"
+        if isinstance(rank_prev, int):
+            if rank_prev == THE_MAGIC_NUMBER and rank_now != THE_MAGIC_NUMBER:
+                prefix = "📈"
+                delta = " (Entered the chart)"
+            elif rank_now == THE_MAGIC_NUMBER and rank_prev != THE_MAGIC_NUMBER:
+                prefix = "📉"
+                delta = " (Dropped out of chart)"
+            elif rank_now < rank_prev:
+                prefix = "📈"
+                delta = f" ({rank_prev - rank_now} place(s) up)"
+            elif rank_now > rank_prev:
+                prefix = "📉"
+                delta = f" ({rank_now - rank_prev} place(s) down)"
+        body_line = f"{prefix} *Keyword* '{term}' / {country_label} : #{rank_now}{delta}"
+
+    return title_line + "\n" + body_line + "\n"
 #########################################################################
 client = WebClient(token=SLACK_ALARMY_OAUTH_TOKEN)
 
@@ -261,6 +367,28 @@ def get_ranking_data(url):
         print("ChromeDriver closed.")
 
 
+def post_global_ranking_msg():
+    ranking_data, found = get_ranking_data(APP_STORE_SYEONG_URL)
+    ranking_data_sp, found_sp = get_ranking_data(APP_STORE_SMILEPASS_URL)
+
+    msg = format_ranking(ranking_data, found, ranking_data_sp, found_sp)
+    # track_id = _lookup_track_id_by_bundle(APP_BUNDLE_ID_SYEONG, ITUNES_SEARCH_COUNTRY)
+    # Syeong AppStore Track ID Constant Hard coded
+    track_id=1667568563
+    if track_id:
+        prev_keyword_rank = get_last_keyword_rank()
+        now_keyword_rank = get_keyword_rank(ITUNES_SEARCH_TERM, ITUNES_SEARCH_COUNTRY, track_id)
+        keyword_msg = format_keyword_message(ITUNES_SEARCH_TERM, ITUNES_SEARCH_COUNTRY, now_keyword_rank, prev_keyword_rank)
+        save_last_keyword_rank(now_keyword_rank)
+        msg += keyword_msg
+    else:
+        msg += "(참고) 번들ID로 trackId를 찾지 못해 키워드 순위를 건너뜀\n"
+    try:
+        # print(msg)
+        response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
+                                           text=msg)
+    except SlackApiError as e:
+        print(f"Error posting slack message: {e}")
 def post_ranking_msg():
     ranking_data, found = get_ranking_data(APP_STORE_SYEONG_URL)
     ranking_data_sp, found_sp = get_ranking_data(APP_STORE_SMILEPASS_URL)
@@ -273,5 +401,6 @@ def post_ranking_msg():
         print(f"Error posting slack message: {e}")
 
 
+
 if __name__ == "__main__":
-    post_ranking_msg()
+    post_global_ranking_msg()
