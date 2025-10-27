@@ -30,6 +30,14 @@ ITUNES_SEARCH_TERM = os.getenv('ITUNES_SEARCH_TERM', 'swimming').strip()
 LAST_KEYWORD_RANK_FILE_PATH = "crawlers/outputs/last_keyword_rank.json"
 LAST_GLOBAL_KEYWORD_RANK_FILE_PATH = "crawlers/outputs/last_keyword_rank.json"
 ITUNES_SEARCH_LIMIT = 200  # API max
+
+# Multiple country/keyword configurations
+KEYWORD_CONFIGS = [
+    {"country": "us", "term": "swimming"},
+    {"country": "us", "term": "swim"},
+    {"country": "jp", "term": "水泳"}
+]
+LAST_MULTI_KEYWORD_RANK_FILE_PATH = "crawlers/outputs/last_multi_keyword_rank.json"
 def _lookup_track_id_by_bundle(bundle_id: str, country: str) -> int:
     if not bundle_id:
         return 0
@@ -96,35 +104,81 @@ def save_last_keyword_rank(current_rank: int):
     except Exception as e:
         print(f"Error saving last keyword rank: {e}")
 
+
+def get_last_multi_keyword_ranks() -> dict:
+    """Load last rankings for all keyword configs"""
+    if not os.path.exists(LAST_MULTI_KEYWORD_RANK_FILE_PATH):
+        return {}
+    try:
+        with open(LAST_MULTI_KEYWORD_RANK_FILE_PATH, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading last multi keyword ranks: {e}")
+        return {}
+
+
+def save_multi_keyword_ranks(ranks_data: dict):
+    """Save current rankings for all keyword configs"""
+    try:
+        with open(LAST_MULTI_KEYWORD_RANK_FILE_PATH, "w") as f:
+            json.dump(ranks_data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving multi keyword ranks: {e}")
+
 def format_keyword_message(term: str, country: str, rank_now: int, rank_prev: Optional[int]) -> str:
     """
-    Formats keyword ranking messages in English for US/UK audiences,
-    with a title line highlighting the global Syeong app's position.
+    Formats keyword ranking messages for different countries.
+    Supports both English (US) and Japanese (JP) formats.
     """
     country_label = country.upper()
 
-    # Title line
-    title_line = f"*🌎 Current US AppStore ranking of Syeong app for '{term}' keyword*"
+    # Country-specific formatting
+    if country == "jp":
+        # Japanese format
+        title_line = f"*🇯🇵 日本AppStoreでの'{term}'キーワード順位*"
 
-    if rank_now == THE_MAGIC_NUMBER:
-        body_line = f"*Keyword* '{term}' / {country_label} : Not ranked"
+        if rank_now == THE_MAGIC_NUMBER:
+            body_line = f"*キーワード* '{term}' / {country_label} : ランク外"
+        else:
+            delta = ""
+            prefix = "⛔"
+            if isinstance(rank_prev, int):
+                if rank_prev == THE_MAGIC_NUMBER and rank_now != THE_MAGIC_NUMBER:
+                    prefix = "📈"
+                    delta = " (ランクイン)"
+                elif rank_now == THE_MAGIC_NUMBER and rank_prev != THE_MAGIC_NUMBER:
+                    prefix = "📉"
+                    delta = " (ランク外)"
+                elif rank_now < rank_prev:
+                    prefix = "📈"
+                    delta = f" ({rank_prev - rank_now}位上昇)"
+                elif rank_now > rank_prev:
+                    prefix = "📉"
+                    delta = f" ({rank_now - rank_prev}位下降)"
+            body_line = f"{prefix} *キーワード* '{term}' / {country_label} : #{rank_now}{delta}"
     else:
-        delta = ""
-        prefix = "⛔"
-        if isinstance(rank_prev, int):
-            if rank_prev == THE_MAGIC_NUMBER and rank_now != THE_MAGIC_NUMBER:
-                prefix = "📈"
-                delta = " (Entered the chart)"
-            elif rank_now == THE_MAGIC_NUMBER and rank_prev != THE_MAGIC_NUMBER:
-                prefix = "📉"
-                delta = " (Dropped out of chart)"
-            elif rank_now < rank_prev:
-                prefix = "📈"
-                delta = f" ({rank_prev - rank_now} place(s) up)"
-            elif rank_now > rank_prev:
-                prefix = "📉"
-                delta = f" ({rank_now - rank_prev} place(s) down)"
-        body_line = f"{prefix} *Keyword* '{term}' / {country_label} : #{rank_now}{delta}"
+        # English format (US and others)
+        title_line = f"*🌎 {country_label} AppStore ranking for '{term}' keyword*"
+
+        if rank_now == THE_MAGIC_NUMBER:
+            body_line = f"*Keyword* '{term}' / {country_label} : Not ranked"
+        else:
+            delta = ""
+            prefix = "⛔"
+            if isinstance(rank_prev, int):
+                if rank_prev == THE_MAGIC_NUMBER and rank_now != THE_MAGIC_NUMBER:
+                    prefix = "📈"
+                    delta = " (Entered the chart)"
+                elif rank_now == THE_MAGIC_NUMBER and rank_prev != THE_MAGIC_NUMBER:
+                    prefix = "📉"
+                    delta = " (Dropped out of chart)"
+                elif rank_now < rank_prev:
+                    prefix = "📈"
+                    delta = f" ({rank_prev - rank_now} place(s) up)"
+                elif rank_now > rank_prev:
+                    prefix = "📉"
+                    delta = f" ({rank_now - rank_prev} place(s) down)"
+            body_line = f"{prefix} *Keyword* '{term}' / {country_label} : #{rank_now}{delta}"
 
     return title_line + "\n" + body_line + "\n"
 #########################################################################
@@ -372,17 +426,36 @@ def post_global_ranking_msg():
     ranking_data_sp, found_sp = get_ranking_data(APP_STORE_SMILEPASS_URL)
 
     msg = format_ranking(ranking_data, found, ranking_data_sp, found_sp)
-    # track_id = _lookup_track_id_by_bundle(APP_BUNDLE_ID_SYEONG, ITUNES_SEARCH_COUNTRY)
-    # Syeong AppStore Track ID Constant Hard coded
-    track_id=1667568563
-    if track_id:
-        prev_keyword_rank = get_last_keyword_rank()
-        now_keyword_rank = get_keyword_rank(ITUNES_SEARCH_TERM, ITUNES_SEARCH_COUNTRY, track_id)
-        keyword_msg = format_keyword_message(ITUNES_SEARCH_TERM, ITUNES_SEARCH_COUNTRY, now_keyword_rank, prev_keyword_rank)
-        save_last_keyword_rank(now_keyword_rank)
-        msg += keyword_msg
-    else:
-        msg += "(참고) 번들ID로 trackId를 찾지 못해 키워드 순위를 건너뜀\n"
+
+    # Hard coded Syeong AppStore Track IDs for different countries
+    track_ids = {
+        "us": 1667568563,
+        "jp": 1667568563  # Same track ID but different store
+    }
+
+    # Get previous rankings for all keyword configs
+    prev_ranks = get_last_multi_keyword_ranks()
+    current_ranks = {}
+
+    # Process each keyword configuration
+    for config in KEYWORD_CONFIGS:
+        country = config["country"]
+        term = config["term"]
+        key = f"{country}_{term}"
+
+        track_id = track_ids.get(country)
+        if track_id:
+            prev_rank = prev_ranks.get(key)
+            now_rank = get_keyword_rank(term, country, track_id)
+            keyword_msg = format_keyword_message(term, country, now_rank, prev_rank)
+            msg += keyword_msg
+            current_ranks[key] = now_rank
+        else:
+            msg += f"(참고) {country.upper()}의 trackId를 찾지 못해 '{term}' 키워드 순위를 건너뜀\n"
+
+    # Save current rankings
+    save_multi_keyword_ranks(current_ranks)
+
     try:
         # print(msg)
         response = client.chat_postMessage(channel=SLACK_NOTIFICATIONS_CHANNEL_ID,
